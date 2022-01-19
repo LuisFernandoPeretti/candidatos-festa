@@ -3,23 +3,14 @@ const app = express()
 const cors = require("cors")
 const pool = require("./db")
 
+let moment = require("moment")
+
 
 //middleware
 app.use(cors())
 app.use(express.json())
 
 //ROUTES
-
-app.get("/candidatos", async (req, res) => {
-    try {
-        const { email } = req.query
-        const candidatos = await pool.query("SELECT * FROM candidatos WHERE email LIKE $1", [`${email}`])
-        res.json(candidatos.rows)
-    } catch (err) {
-        console.error(err.message)
-    }
-
-})
 
 //CREATE A REGISTER
 
@@ -31,16 +22,26 @@ app.post("/candidatos", async (req, res) => {
         const { sobrenome } = req.body;
         const { data_nascimento } = req.body;
         const { CPF } = req.body;
-        const { data_criacao } = req.body;
-        const { data_atualizacao } = req.body;
 
-        const novoCandidato = await pool.query("INSERT INTO candidatos ( email, nome, sobrenome, data_nascimento, CPF, data_criacao, data_atualizacao) VALUES ( $1, $2, $3, $4, $5, $6, $7 ) RETURNING *",
-        [ email, nome, sobrenome, data_nascimento, CPF, data_criacao, data_atualizacao ])
+        var data_atual = moment().format('L').split("/")
+        var ano = data_atual[2]
+        
+        var data_nasc = data_nascimento.split("/")
+        var ano_nasc = data_nasc[2]
+
+        idade = ano - ano_nasc
+        console.log(idade)
+
+        if (idade >= 18)
+        {
+        const novoCandidato = await pool.query("INSERT INTO candidatos ( email, nome, sobrenome, data_nascimento, CPF ) VALUES ( $1, $2, $3, $4, $5 ) RETURNING *",
+        [ email, nome, sobrenome, data_nascimento, CPF ])
         res.json(novoCandidato.rows[0])
-
-        console.log(data_nasc)
-        console.log(data_criacao);
-        console.log(data_atualizacao);
+        }
+        else
+        {
+            console.log("usuario dimenor")
+        }
         //console.log(req.body)
     } catch (err) {
         console.error(err.message)
@@ -69,6 +70,19 @@ app.get("/candidatos/:id", async (req, res) => {
     } catch (err) {
         console.error(err.message)
     }
+})
+
+// GET A REGISTER SEACH BOX
+
+app.get("/candidatos", async (req, res) => {
+    try {
+        const { email } = req.query
+        const candidatos = await pool.query("SELECT * FROM candidatos WHERE email LIKE $1", [`${email}`])
+        res.json(candidatos.rows)
+    } catch (err) {
+        console.error(err.message)
+    }
+
 })
 
 //UPDATE A REGISTER
